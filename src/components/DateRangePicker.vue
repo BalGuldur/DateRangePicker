@@ -58,9 +58,10 @@
       showedMonths () {
         const {showedMonth, dateFormat, monthShiftBy} = this
         const momentDate = moment(showedMonth, dateFormat).startOf('month').add(monthShiftBy, 'month')
+        // Написать нормальную генерацию array для повторения календарей
         return [0, 1].map(shifted => momentDate.add(shifted, 'month').format(dateFormat))
       },
-      newDateChoosedCicle () {
+      newChoosedCicle () {
         return ((this.dateFrom === '' && this.dateTo === '') || (this.dateFrom !== '' && this.dateTo !== ''))
       }
     },
@@ -74,12 +75,22 @@
       },
       chooseDay (choosedDateStr) {
         console.log('chooseDateStr', choosedDateStr)
-        if (this.newDateChoosedCicle) {
+        if (this.newChoosedCicle) {
           this.dateFrom = choosedDateStr
           this.dateTo = ''
         } else {
           // Добавить проверку какая дата больше, если меньше добавляемая сейчас, то поменять их местами
-          this.dateTo = choosedDateStr
+          const {dateFrom, dateFormat} = this
+          const momentFrom = moment(dateFrom, dateFormat)
+          const momentTo = moment(choosedDateStr, dateFormat)
+          if (momentTo.isBefore(momentFrom)) {
+            // Если даты перепутаны местами (вторая дата меньше первой)
+            this.dateFrom = momentTo.format(dateFormat)
+            this.dateTo = momentFrom.format(dateFormat)
+          } else {
+            // Если с датами все ок (вторая дата больше или равна первой)
+            this.dateTo = choosedDateStr
+          }
         }
       }
     }
