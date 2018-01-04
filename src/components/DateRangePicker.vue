@@ -2,14 +2,48 @@
   <div>
     <button @click="substractMonth"> - </button>
     <button @click="addMonth"> + </button>
+    <!--Заменить на самописные date input позволяющие вводить только цифры-->
+    <input :value="dateFrom">
+    <input :value="dateTo">
+    <br>
+    <template
+      v-for="week in firstMonth"
+    >
+      <calendar-day
+        v-for="dayDate in week"
+        :key="dayDate + 'firstMonth'"
+        :value="dayDate"
+        :date-to="dateTo"
+        :date-from="dateFrom"
+        @click="chooseDay"
+      />
+      <br>
+    </template>
+    <br><br>
+    <template
+      v-for="week in secondMonth"
+    >
+      <calendar-day
+        v-for="dayDate in week"
+        :key="dayDate + 'secondMonth'"
+        :value="dayDate"
+        :date-to="dateTo"
+        :date-from="dateFrom"
+        @click="chooseDay"
+      />
+      <br>
+    </template>
   </div>
 </template>
 
 <script>
+  import CalendarDay from './CalendarDay'
+
   import moment from 'moment'
 
   export default {
     name: 'DateRangePicker',
+    components: {CalendarDay},
     props: {
       // Показываемый месяц в виде строки распозноваемой moment.js
       showedMonth: {
@@ -25,7 +59,11 @@
     data () {
       return {
         // Переход на другие месяцы, относительно showedMonth (чтобы работали кнопки сегодня и т.д.)
-        monthShiftBy: 0
+        monthShiftBy: 0,
+        dateFrom: '',
+        dateTo: '',
+        // Для отображения выбираемого периода по срабатыванию mouseOver
+        tmpDateTo: ''
       }
     },
 
@@ -78,6 +116,9 @@
       firstWeekSecondMonth () {
         return this.startOfSecondMonth.isoWeek()
         // return this.startOfSecondMonth.isoWeek()
+      },
+      newDateChoosedCicle () {
+        return ((this.dateFrom === '' && this.dateTo === '') || (this.dateFrom !== '' && this.dateTo !== ''))
       }
     },
 
@@ -87,6 +128,16 @@
       },
       substractMonth () {
         this.monthShiftBy = this.monthShiftBy - 1
+      },
+      chooseDay (choosedDateStr) {
+        console.log('chooseDateStr', choosedDateStr)
+        if (this.newDateChoosedCicle) {
+          this.dateFrom = choosedDateStr
+          this.dateTo = ''
+        } else {
+          // Добавить проверку какая дата больше, если меньше добавляемая сейчас, то поменять их местами
+          this.dateTo = choosedDateStr
+        }
       }
     }
   }
