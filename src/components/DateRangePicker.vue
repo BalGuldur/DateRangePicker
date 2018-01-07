@@ -1,37 +1,60 @@
 <template>
   <div>
     <button @click="substractMonth"> - </button>
-    <button @click="addMonth"> + </button>
     <!--Заменить на самописные date input позволяющие вводить только цифры-->
-    <input :value="dateFrom">
-    <input :value="dateTo">
+    <date-input
+      :value="dateFrom"
+      @input="changeDateFrom"
+    />
+    <date-input
+      :value="dateTo"
+      @input="changeDateTo"
+    />
+    <button @click="addMonth"> + </button>
+    <button @click="close"> x </button>
     <br>
     <!--Отображение календаря повторяемое-->
-    <view-calendar
-      v-for="showedMonth in showedMonths"
-      :key="showedMonth"
-      :showed-month="showedMonth"
-      :date-to="dateTo"
-      :date-from="dateFrom"
-      @click="chooseDay"
-    />
+    <table>
+      <tr>
+        <td>
+          <slot name="buttons">
+            <default-buttons @change="changeDateRange"/>
+          </slot>
+        </td>
+        <template v-for="showedMonth in showedMonths">
+          <td :key="showedMonth">
+            <view-calendar
+              :key="showedMonth"
+              :showed-month="showedMonth"
+              :date-to="dateTo"
+              :tmp-date-to="tmpDateTo"
+              :date-from="dateFrom"
+              @click="chooseDay"
+              @mouseoverDay="toggleTmpDay"
+            />
+          </td>
+        </template>
+      </tr>
+    </table>
   </div>
 </template>
 
 <script>
   import CalendarDay from './CalendarDay'
   import ViewCalendar from './ViewCalendar'
+  import DefaultButtons from './DateRangeButtons'
+  import DateInput from './DateInput'
 
   import moment from 'moment'
 
   export default {
     name: 'DateRangePicker',
-    components: {CalendarDay, ViewCalendar},
+    components: {CalendarDay, ViewCalendar, DefaultButtons, DateInput},
     props: {
       // Показываемый месяц в виде строки распозноваемой moment.js
       showedMonth: {
         type: String,
-        default: moment().format(this.dateFormat)
+        default: moment().format(this.dateFormat || 'DD.MM.YYYY')
       },
       dateFormat: {
         type: String,
@@ -40,6 +63,14 @@
       qtyShowCalendar: {
         type: Number,
         default: 1
+      },
+      dateFrom: {
+        type: String,
+        required: true
+      },
+      dateTo: {
+        type: String,
+        required: true
       }
     },
 
@@ -47,8 +78,6 @@
       return {
         // Переход на другие месяцы, относительно showedMonth (чтобы работали кнопки сегодня и т.д.)
         monthShiftBy: 0,
-        dateFrom: '',
-        dateTo: '',
         // Для отображения выбираемого периода по срабатыванию mouseOver
         tmpDateTo: ''
       }
@@ -74,10 +103,13 @@
         this.monthShiftBy = this.monthShiftBy - 1
       },
       chooseDay (choosedDateStr) {
-        console.log('chooseDateStr', choosedDateStr)
         if (this.newChoosedCicle) {
-          this.dateFrom = choosedDateStr
-          this.dateTo = ''
+          this.changeDateRange({
+            dateTo: '',
+            dateFrom: choosedDateStr
+          })
+          // this.dateFrom = choosedDateStr
+          // this.dateTo = ''
         } else {
           // Добавить проверку какая дата больше, если меньше добавляемая сейчас, то поменять их местами
           const {dateFrom, dateFormat} = this
@@ -85,18 +117,41 @@
           const momentTo = moment(choosedDateStr, dateFormat)
           if (momentTo.isBefore(momentFrom)) {
             // Если даты перепутаны местами (вторая дата меньше первой)
-            this.dateFrom = momentTo.format(dateFormat)
-            this.dateTo = momentFrom.format(dateFormat)
+            this.changeDateRange({
+              dateTo: momentFrom.format(dateFormat),
+              dateFrom: momentTo.format(dateFormat)
+            })
+            // this.dateFrom = momentTo.format(dateFormat)
+            // this.dateTo = momentFrom.format(dateFormat)
           } else {
             // Если с датами все ок (вторая дата больше или равна первой)
-            this.dateTo = choosedDateStr
+            this.changeDateRange({
+              dateTo: choosedDateStr,
+              dateFrom: this.dateFrom
+            })
+            // this.dateTo = choosedDateStr
           }
         }
+      },
+      toggleTmpDay (DateStr) {
+        if (!this.newChoosedCicle) {
+          this.tmpDateTo = DateStr
+        } else {
+          this.tmpDateTo = ''
+        }
+      },
+      changeDateFrom (newDateFrom) {
+        this.changeDateRange({dateFrom: newDateFrom})
+      },
+      changeDateTo (newDateTo) {
+        this.changeDateRange({dateTo: newDateTo})
+      },
+      changeDateRange ({dateTo, dateFrom}) {
+        this.$emit('input', {dateTo, dateFrom})
+      },
+      close () {
+        this.$emit('close')
       }
     }
   }
 </script>
-
-<style scoped>
-
-</style>

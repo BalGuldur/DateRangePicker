@@ -1,13 +1,26 @@
 <template>
   <div>
+    {{ monthName }}
+    <br>
+    <label
+      v-for="dayName in dayNames"
+      :key="dayName"
+    >
+      {{ dayName }}
+    </label>
+    <br>
     <template v-for="week in monthIterator">
       <calendar-day
         v-for="dayDate in week"
         :key="dayDate"
         :value="dayDate"
         :date-to="dateTo"
+        :tmp-date-to="tmpDateTo"
         :date-from="dateFrom"
-        @click="(e) => $emit('click', e)"/>
+        :showed-month="showedMonth"
+        @click="(e) => $emit('click', e)"
+        @mouseoverDay="(e) => $emit('mouseoverDay', e)"
+      />
       <br>
     </template>
     <br>
@@ -69,11 +82,18 @@
       },
       firstWeek () {
         return this.startOfMonth.isoWeek()
+      },
+      monthName () {
+        const {showedMonth, dateFormat} = this
+        const momentDate = moment(showedMonth, dateFormat)
+        return moment.localeData('ru').months(momentDate)
+      },
+      dayNames () {
+        const momentDate = moment(this.showedMonth, this.dateFormat)
+        return [1, 2, 3, 4, 5, 6, 7].map(dayNumber => {
+          return moment.localeData('ru').weekdaysShort(momentDate.isoWeekday(dayNumber))
+        })
       }
     }
   }
 </script>
-
-<style scoped>
-
-</style>
